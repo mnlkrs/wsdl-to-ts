@@ -20,6 +20,9 @@ export class TypeCollector {
         return this;
     }
 }
+function isNumberTypeClass(superTypeClass) {
+    return ["integer", "decimal"].indexOf(superTypeClass.replace("xs:", "").replace("xsd:", "")) > -1;
+}
 function wsdlTypeToInterfaceObj(obj, typeCollector) {
     const r = {};
     for (const k of Object.keys(obj)) {
@@ -35,7 +38,10 @@ function wsdlTypeToInterfaceObj(obj, typeCollector) {
             const [typeName, superTypeClass, typeData] = vstr.indexOf("|") === -1 ? [vstr, vstr, undefined] : vstr.split("|");
             const typeFullName = obj.targetNamespace ? obj.targetNamespace + "#" + typeName : typeName;
             let typeClass = superTypeClass === "integer" ? "number" : superTypeClass;
-            if (nsEnums[typeFullName] || typeData) {
+            if (isNumberTypeClass(superTypeClass)) {
+                typeClass = "number";
+            }
+            else if (nsEnums[typeFullName] || typeData) {
                 const filter = nsEnums[typeFullName] ?
                     () => true :
                     (x) => x !== "length" && x !== "pattern" && x !== "maxLength" && x !== "minLength";
@@ -128,7 +134,14 @@ function wsdlTypeToInterfaceString(d, opts = {}) {
                 const rawtype = v.substring(i).trim();
                 const colon = rawtype.indexOf(":");
                 if (colon !== -1) {
-                    r.push(p + ": " + rawtype.substring(colon + 1));
+                    const preamble = rawtype.substring(0, colon);
+                    const lastOpenBracket = preamble.lastIndexOf("<");
+                    if (lastOpenBracket !== -1) {
+                        r.push(p + ": " + preamble.substring(0, lastOpenBracket + 1) + rawtype.substring(colon + 1));
+                    }
+                    else {
+                        r.push(p + ": " + rawtype.substring(colon + 1));
+                    }
                 }
                 else {
                     r.push(p + ": " + rawtype);
