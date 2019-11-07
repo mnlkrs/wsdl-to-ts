@@ -199,7 +199,7 @@ function wsdlTypeToInterface(obj: { [k: string]: any }, typeCollector?: TypeColl
 
 export function wsdl2ts(wsdlUri: string, opts?: IInterfaceOptions): Promise<ITypedWsdl> {
     return new Promise<soap.Client>((resolve, reject) => {
-        soap.createClient(wsdlUri, {}, (err, client) => {
+        soap.createClient(wsdlUri, {}, (err: any, client: soap.Client) => {
             if (err) {
                 reject(err);
             } else {
@@ -278,14 +278,20 @@ export function wsdl2ts(wsdlUri: string, opts?: IInterfaceOptions): Promise<ITyp
                     r.types[service][port]["I" + method + "Output"] =
                         wsdlTypeToInterface(d[service][port][method].output || {}, collector, opts);
                     r.methods[service][port][method] =
-                        "(input: I" + method + "Input, " +
+                        "(input: Partial<I" + method + "Input>, " +
                         "cb: (err: any | null," +
                         " result: I" + method + "Output," +
-                        " raw: string, " +
-                        " soapHeader: {[k: string]: any; }) => any, " +
+                        " rawResult: string, " +
+                        " soapHeader: {[k: string]: any; }, " +
+                        " rawRequest: string) => any, " +
                         "options?: any, " +
                         "extraHeaders?: any" +
                         ") => void";
+                    r.methods[service][port][method + "Async"] =
+                      "(input: Partial<I" + method + "Input>, " +
+                      "options?: any, " +
+                      "extraHeaders?: any" +
+                      ") => Promise<[I" + method + "Output, string, {[k: string]: any; }, string]>";
                 }
             }
         }
