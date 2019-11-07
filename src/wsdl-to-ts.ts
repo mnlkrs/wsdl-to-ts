@@ -46,9 +46,18 @@ export class TypeCollector {
     }
 }
 
-function isNumberTypeClass(superTypeClass: string) {
-  return ["integer", "decimal"].indexOf(superTypeClass.replace("xs:", "").replace("xsd:", "")) > -1;
-}
+const xsTypes = new Map<string, string>([
+  ["integer", "number"],
+  ["decimal", "number"],
+  ["int", "number"],
+  ["long", "number"],
+  ["double", "number"],
+  ["dateTime", "Date"],
+  ["date", "Date"],
+  ["time", "Date"],
+  ["anyType", "any"],
+  ["base64Binary", "string"],
+]);
 
 function wsdlTypeToInterfaceObj(obj: IInterfaceObject, typeCollector?: TypeCollector): { [k: string]: any } {
     const r: { [k: string]: any } = {};
@@ -61,13 +70,18 @@ function wsdlTypeToInterfaceObj(obj: IInterfaceObject, typeCollector?: TypeColle
         const v = obj[k];
         const t = typeof v;
         if (t === "string") {
-            const vstr = v as string;
-            const [typeName, superTypeClass, typeData] =
-                vstr.indexOf("|") === -1 ? [vstr, vstr, undefined] : vstr.split("|");
-            const typeFullName = obj.targetNamespace ? obj.targetNamespace + "#" + typeName : typeName;
-            let typeClass = superTypeClass === "integer" ? "number" : superTypeClass;
-            if (isNumberTypeClass(superTypeClass)) {
-              typeClass = "number";
+          const vstr = v as string;
+          const [typeName, superTypeClass, typeData] =
+            vstr.indexOf("|") === -1 ? [vstr, vstr, undefined] : vstr.split("|");
+          const typeFullName = obj.targetNamespace ? obj.targetNamespace + "#" + typeName : typeName;
+          let typeClass = superTypeClass;
+
+          const xsTypeParts = superTypeClass.split(":");
+          const xsTypeWithoutNsPrefix = xsTypeParts[1] || xsTypeParts[0];
+          const resolvedXsType = xsTypes.get(xsTypeWithoutNsPrefix) || xsTypeWithoutNsPrefix;
+
+          if (resolvedXsType) {
+            typeClass = resolvedXsType;
             } else if (nsEnums[typeFullName] || typeData) {
                 const filter = nsEnums[typeFullName] ?
                     () => true :

@@ -20,8 +20,23 @@ export class TypeCollector {
         return this;
     }
 }
+const xsTypes = new Map([
+    ["integer", "number"],
+    ["decimal", "number"],
+    ["int", "number"],
+    ["long", "number"],
+    ["double", "number"],
+    ["dateTime", "Date"],
+    ["date", "Date"],
+    ["time", "Date"],
+    ["anyType", "any"],
+    ["base64Binary", "string"],
+]);
 function isNumberTypeClass(superTypeClass) {
-    return ["integer", "decimal"].indexOf(superTypeClass.replace("xs:", "").replace("xsd:", "")) > -1;
+    return ["integer", "decimal", "int", "long", "double"].indexOf(superTypeClass.replace("xs:", "").replace("xsd:", "")) > -1;
+}
+function isDateTypeClass(superTypeClass) {
+    return ["dateTime", "date", "time"].indexOf(superTypeClass.replace("xs:", "").replace("xsd:", "")) > -1;
 }
 function wsdlTypeToInterfaceObj(obj, typeCollector) {
     const r = {};
@@ -37,9 +52,12 @@ function wsdlTypeToInterfaceObj(obj, typeCollector) {
             const vstr = v;
             const [typeName, superTypeClass, typeData] = vstr.indexOf("|") === -1 ? [vstr, vstr, undefined] : vstr.split("|");
             const typeFullName = obj.targetNamespace ? obj.targetNamespace + "#" + typeName : typeName;
-            let typeClass = superTypeClass === "integer" ? "number" : superTypeClass;
-            if (isNumberTypeClass(superTypeClass)) {
-                typeClass = "number";
+            let typeClass = superTypeClass;
+            const xsTypeParts = superTypeClass.split(":");
+            const xsTypeWithoutNsPrefix = xsTypeParts[1] || xsTypeParts[0];
+            const resolvedXsType = xsTypes.get(xsTypeWithoutNsPrefix) || xsTypeWithoutNsPrefix;
+            if (resolvedXsType) {
+                typeClass = resolvedXsType;
             }
             else if (nsEnums[typeFullName] || typeData) {
                 const filter = nsEnums[typeFullName] ?
