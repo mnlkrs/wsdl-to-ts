@@ -4,17 +4,24 @@
 import { rename, writeFile } from "fs";
 import * as minimist from "minimist";
 import * as mkdirp from "mkdirp";
-import { IInterfaceOptions, ITypedWsdl, mergeTypedWsdl, outputTypedWsdl, wsdl2ts } from "./wsdl-to-ts";
+import { IInterfaceOptions, mergeTypedWsdl, outputTypedWsdl, wsdl2ts } from "./wsdl-to-ts";
 
 interface IConfigObject {
     outdir: string;
     files: string[];
     tslintDisable: null | string[];
     tslintEnable: null | string[];
+    eslintDisable: null | string[];
 }
 
 const opts: IInterfaceOptions = {};
-const config: IConfigObject = { outdir: "./wsdl", files: [], tslintDisable: ["max-line-length", "no-empty-interface"], tslintEnable: [] };
+const config: IConfigObject = {
+  outdir: "./wsdl",
+  files: [],
+  tslintDisable: ["max-line-length", "no-empty-interface"],
+  tslintEnable: [],
+  eslintDisable: [],
+};
 
 const args = minimist(process.argv.slice(2));
 
@@ -42,6 +49,14 @@ if (args.hasOwnProperty("tslint")) {
 
 if (args.hasOwnProperty("tslint-disable")) {
     config.tslintDisable = args["tslint-disable"] ? args["tslint-disable"].split(",") : null;
+}
+
+if (args.hasOwnProperty("eslint")) {
+  if (args.eslint === "false" || args.eslint === "disable") {
+    config.eslintDisable = null;
+  } else {
+    config.eslintDisable = args.eslint ? args.eslint.split(",") : null;
+  }
 }
 
 if (args.outdir || args.outDir) {
@@ -101,6 +116,11 @@ Promise.all(config.files.map((a) => wsdl2ts(a, opts))).
                     }
                     if (config.tslintEnable && config.tslintEnable.length !== 0) {
                         fileData.push("/* tslint:enable:" + config.tslintEnable.join(" ") + " */");
+                    }
+                    if (config.eslintDisable === null) {
+                        fileData.push("/* eslint-disable */");
+                    } else if (config.eslintDisable.length !== 0) {
+                        fileData.push("/* eslint-disable " + config.eslintDisable.join(", ") + " */");
                     }
                     fileData.push(x.data.join("\n\n"));
                     fileData.push("");
