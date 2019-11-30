@@ -362,6 +362,7 @@ export function outputTypedWsdl(a: ITypedWsdl): Array<{ file: string, data: stri
     for (const service of Object.keys(a.files)) {
         for (const port of Object.keys(a.files[service])) {
             const d: { file: string, data: string[] } = { file: a.files[service][port], data: [] };
+            d.data.push(`import { Client } from 'soap';`);
             if (a.types[service] && a.types[service][port]) {
                 for (const type of Object.keys(a.types[service][port])) {
                     d.data.push("export interface " + type + " " + a.types[service][port][type]);
@@ -373,7 +374,7 @@ export function outputTypedWsdl(a: ITypedWsdl): Array<{ file: string, data: stri
                     ms.push(method + ": " + a.methods[service][port][method] + ";");
                 }
                 if (ms.length) {
-                    d.data.push("export interface I" + port + "Soap {\n    " + ms.join("\n    ") + "\n}");
+                    d.data.push("export interface I" + port + "Soap extends Client {\n    " + ms.join("\n    ") + "\n}");
                 }
             }
             if (a.namespaces[service] && a.namespaces[service][port]) {
