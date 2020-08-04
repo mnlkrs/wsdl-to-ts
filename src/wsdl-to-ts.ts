@@ -51,6 +51,7 @@ const xsTypes = new Map<string, string>([
   ["decimal", "number"],
   ["int", "number"],
   ["long", "number"],
+  ["float", "number"],
   ["double", "number"],
   ["dateTime", "Date"],
   ["date", "Date"],

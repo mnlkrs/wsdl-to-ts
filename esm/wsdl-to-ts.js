@@ -25,6 +25,7 @@ const xsTypes = new Map([
     ["decimal", "number"],
     ["int", "number"],
     ["long", "number"],
+    ["float", "number"],
     ["double", "number"],
     ["dateTime", "Date"],
     ["date", "Date"],
